@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\sunfx\\.ohos\\config\\default_harmony_a1D4Xcog0t_jAiiP4Cn1IWEy7KRl8nN1_bJP2cCIH0M=.cer",
+          "certpath": "/Users/sunfx/.ohos/config/default_harmony_tSUb6WhGzBi6yfrCIfsOg45230YwMnds74q95jNwHLc=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BFBFF896E878CC323D943BC1DE8C053CF1B5F0C78485E88CF2366BEFC56C1794CEF76FC4584C117",
-          "profile": "C:\\Users\\sunfx\\.ohos\\config\\default_harmony_a1D4Xcog0t_jAiiP4Cn1IWEy7KRl8nN1_bJP2cCIH0M=.p7b",
+          "keyPassword": "0000001B7C0697272F2A8C540676F62238C21F69DDCCA53275D4153C721A14E35C818A0E9DECBC38EC4069",
+          "profile": "/Users/sunfx/.ohos/config/default_harmony_tSUb6WhGzBi6yfrCIfsOg45230YwMnds74q95jNwHLc=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\sunfx\\.ohos\\config\\default_harmony_a1D4Xcog0t_jAiiP4Cn1IWEy7KRl8nN1_bJP2cCIH0M=.p12",
-          "storePassword": "0000001B2C50F9DBB0189FEF0D7B9E7196CAC9F5959707AEDF64617D97FDF0208195BDFDE15CA797F6A162"
+          "storeFile": "/Users/sunfx/.ohos/config/default_harmony_tSUb6WhGzBi6yfrCIfsOg45230YwMnds74q95jNwHLc=.p12",
+          "storePassword": "0000001BEBA2FA1AC494DF087344316C8482B05AF64A502DB7B0FDE5505F1280A8FCD46D3D1C029795862C"
         }
       }
     ],

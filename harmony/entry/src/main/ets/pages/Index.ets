@@ -16,6 +16,7 @@ interface ResTarget { name: string, targets: string[] }
 
 const IDENTITY_FILE = 'hm-identity.json';
 const SVC_EVENT = 'com.example.myapplication.ZITI_SVC';
+const MAX_LOG_LINES: number = 500;
 
 // ===== 主题色 =====
 const COL_BG: string = '#0B0F16';
@@ -34,11 +35,18 @@ const COL_DIM_RED: string = '#3A1A22';
 const COL_DIM_GREEN: string = '#12291B';
 const COL_DIM_BLUE: string = '#13203A';
 const COL_DIM_TEAL: string = '#0E2B31';
+const COL_BAR_BG: string = '#0D1219';
+
+// Tab 索引
+const TAB_HOME: number = 0;
+const TAB_RES: number = 1;
+const TAB_TOOLS: number = 2;
+const TAB_LOG: number = 3;
 
 @Entry
 @Component
 struct Index {
-  @State private logText: string = '';
+  @State private logLines: string[] = [];
   @State private jwtText: string = '';
   @State private identityName: string = '';
   @State private identityJson: string = '';
@@ -48,9 +56,11 @@ struct Index {
   @State private vpnOn: boolean = false;
   @State private svcInput: string = 'test.aaa.com';
   @State private resources: ResTarget[] = [];
+  @State private currentTab: number = TAB_HOME;
   private svcSubscriber: commonEventManager.CommonEventSubscriber | null = null;
   private socket: number = -1;
   private logScroll: Scroller = new Scroller();
+  private tabCtrl: TabsController = new TabsController();
   private appCtx: Context | null = null;
 
   aboutToAppear(): void {
@@ -129,8 +139,32 @@ struct Index {
   log(msg: string): void {
     const now = new Date();
     const ts = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-    this.logText += `[${ts}] ${msg}\n`;
+    this.logLines.push(`[${ts}] ${msg}`);
+    if (this.logLines.length > MAX_LOG_LINES) {
+      this.logLines.splice(0, this.logLines.length - MAX_LOG_LINES);
+    }
     console.info(`ZITI ${msg}`);
+    if (this.currentTab === TAB_LOG) {
+      setTimeout(() => {
+        this.logScroll.scrollEdge(Edge.Bottom);
+      }, 50);
+    }
+  }
+
+  /** 日志按级别着色 */
+  private logColor(line: string): string {
+    const l = line.toLowerCase();
+    if (l.includes('err') || l.includes('fail') || l.includes('canceled') || l.includes('no response')) {
+      return COL_RED;
+    }
+    if (l.includes('authed') || l.includes('established') || l.includes('saved') ||
+      l.includes('started') || l.includes('updated') || l.includes('enrolled')) {
+      return COL_GREEN;
+    }
+    if (l.includes('waiting') || l.includes('disconnect') || l.includes('deleted') || l.includes('stop')) {
+      return COL_YELLOW;
+    }
+    return '#8FA3B8';
   }
 
   // ==================== UI 组件 ====================
@@ -139,21 +173,21 @@ struct Index {
   HeaderBar() {
     Row({ space: 14 }) {
       Text('Z')
-        .width(46)
-        .height(46)
-        .fontSize(24)
+        .width(42)
+        .height(42)
+        .fontSize(22)
         .fontWeight(FontWeight.Bold)
         .fontColor(Color.White)
         .textAlign(TextAlign.Center)
         .backgroundColor(COL_BLUE)
-        .borderRadius(14)
+        .borderRadius(13)
       Column({ space: 2 }) {
         Text('OpenZiti Tunnel')
-          .fontSize(20)
+          .fontSize(19)
           .fontWeight(FontWeight.Bold)
           .fontColor(COL_TEXT1)
         Text('HarmonyOS · Secure Overlay Network')
-          .fontSize(12)
+          .fontSize(11)
           .fontColor(COL_TEXT3)
       }
       .alignItems(HorizontalAlign.Start)
@@ -169,6 +203,21 @@ struct Index {
     }
     .width('100%')
     .alignItems(VerticalAlign.Center)
+  }
+
+  @Builder
+  TabItem(icon: string, label: string, idx: number) {
+    Column({ space: 3 }) {
+      Text(icon)
+        .fontSize(20)
+        .opacity(this.currentTab === idx ? 1 : 0.45)
+      Text(label)
+        .fontSize(11)
+        .fontWeight(this.currentTab === idx ? FontWeight.Bold : FontWeight.Normal)
+        .fontColor(this.currentTab === idx ? COL_TEAL : COL_TEXT3)
+    }
+    .justifyContent(FlexAlign.Center)
+    .height('100%')
   }
 
   @Builder
@@ -284,58 +333,9 @@ struct Index {
           if (this.vpnOn) { this.doVpnStop(); } else { this.doVpnStart(); }
         })
 
-      Text(this.vpnOn ? '100.64.0.0/10 已路由 · DNS 100.64.0.2' : '未运行 · 启动后可访问 ziti 服务')
+      Text(this.vpnOn ? '100.64.0.0/10 已路由 · DNS 100.64.0.2' : '未运行 · 启动后浏览器即可访问 ziti 服务')
         .fontSize(11)
         .fontColor(this.vpnOn ? COL_TEAL : COL_TEXT3)
-    }
-    .width('100%')
-    .padding(16)
-    .backgroundColor(COL_CARD)
-    .borderRadius(16)
-    .border({ width: 1, color: COL_BORDER })
-  }
-
-  @Builder
-  CardResources() {
-    Column({ space: 10 }) {
-      this.SectionTitle('🌐', '可访问资源', this.vpnOn ? `${this.resources.length} 个服务` : '启动 VPN 后加载')
-
-      if (this.resources.length === 0) {
-        Text(this.vpnOn ? '等待服务列表下发…' : '启动 System VPN 后显示可访问的 ziti 服务')
-          .fontSize(12)
-          .fontColor(COL_TEXT3)
-          .padding({ top: 6, bottom: 6 })
-      } else {
-        ForEach(this.resources, (r: ResTarget) => {
-          Column({ space: 6 }) {
-            Text(r.name)
-              .fontSize(13)
-              .fontWeight(FontWeight.Medium)
-              .fontColor(COL_TEXT1)
-            ForEach(r.targets, (t: string) => {
-              Row({ space: 6 }) {
-                Text('➜').fontSize(11).fontColor(COL_TEAL)
-                Text(t)
-                  .fontSize(12)
-                  .fontColor(COL_TEAL)
-                  .layoutWeight(1)
-                  .onClick(() => { this.openResource(t); })
-                Text('打开')
-                  .fontSize(11)
-                  .fontColor(COL_BLUE)
-                  .padding({ left: 10, right: 10, top: 3, bottom: 3 })
-                  .backgroundColor(COL_DIM_BLUE)
-                  .borderRadius(9)
-                  .onClick(() => { this.openResource(t); })
-              }.width('100%')
-            }, (t: string) => t)
-          }
-          .width('100%')
-          .padding(12)
-          .backgroundColor(COL_CARD_IN)
-          .borderRadius(12)
-        }, (r: ResTarget) => r.name)
-      }
     }
     .width('100%')
     .padding(16)
@@ -359,6 +359,10 @@ struct Index {
         .onClick(() => {
           if (this.connected) { this.doDisconnect(); } else { this.doConnect(); }
         })
+
+      Text(this.connected ? '隧道已建立 · 可进行拨测' : '未连接')
+        .fontSize(11)
+        .fontColor(this.connected ? COL_GREEN : COL_TEXT3)
     }
     .width('100%')
     .padding(16)
@@ -393,6 +397,10 @@ struct Index {
       }
       .width('100%')
       .alignItems(VerticalAlign.Center)
+
+      Text('结果输出到「日志」页')
+        .fontSize(11)
+        .fontColor(COL_TEXT3)
     }
     .width('100%')
     .padding(16)
@@ -400,66 +408,272 @@ struct Index {
     .borderRadius(16)
     .border({ width: 1, color: COL_BORDER })
   }
+
+  // ==================== 各分页 ====================
 
   @Builder
-  CardLog() {
-    Column({ space: 10 }) {
-      Row() {
-        Text('📜 运行日志').fontSize(15).fontWeight(FontWeight.Medium).fontColor(COL_TEXT1)
-        Blank()
-        Text('清空')
-          .fontSize(12)
-          .fontColor(COL_TEXT2)
-          .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-          .backgroundColor('#1A2230')
-          .borderRadius(9)
-          .onClick(() => { this.logText = ''; })
-      }
-      .width('100%')
-
-      Scroll(this.logScroll) {
-        Text(this.logText === '' ? '暂无日志' : this.logText)
-          .fontSize(11)
-          .fontFamily('monospace')
-          .fontColor(this.logText === '' ? COL_TEXT3 : '#7DE3A3')
-          .textAlign(TextAlign.LEFT)
-          .width('100%')
-      }
-      .scrollBar(BarState.Auto)
-      .edgeEffect(EdgeEffect.Spring)
-      .height(200)
-      .width('100%')
-      .align(Alignment.TopStart)
-      .padding(12)
-      .backgroundColor(COL_CARD_IN)
-      .borderRadius(12)
-    }
-    .width('100%')
-    .padding(16)
-    .backgroundColor(COL_CARD)
-    .borderRadius(16)
-    .border({ width: 1, color: COL_BORDER })
-  }
-
-  build(): void {
+  PageHome() {
     Scroll() {
       Column({ space: 14 }) {
-        this.HeaderBar()
         this.StatusTiles()
         this.CardIdentity()
         this.CardVpn()
-        this.CardResources()
-        this.CardTunnel()
-        this.CardDial()
-        this.CardLog()
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 20, bottom: 36 })
+      .padding({ left: 16, right: 16, top: 16, bottom: 32 })
     }
     .scrollBar(BarState.Off)
     .edgeEffect(EdgeEffect.Spring)
     .height('100%')
     .width('100%')
+    .align(Alignment.TopStart)
+  }
+
+  @Builder
+  PageResources() {
+    Column() {
+      // 顶部摘要
+      Row({ space: 12 }) {
+        Column({ space: 2 }) {
+          Text('可访问资源')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(COL_TEXT1)
+          Text(this.vpnOn ? 'VPN 运行中 · 点击地址直接打开' : 'VPN 未启动')
+            .fontSize(11)
+            .fontColor(this.vpnOn ? COL_TEAL : COL_TEXT3)
+        }
+        .alignItems(HorizontalAlign.Start)
+        .layoutWeight(1)
+
+        Text(`${this.resources.length}`)
+          .fontSize(22)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.resources.length > 0 ? COL_TEAL : COL_TEXT3)
+          .constraintSize({ minWidth: 52 })
+          .textAlign(TextAlign.Center)
+          .padding({ top: 6, bottom: 6 })
+          .backgroundColor(COL_CARD)
+          .borderRadius(14)
+          .border({ width: 1, color: COL_BORDER })
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
+      .padding({ left: 16, right: 16, top: 16, bottom: 12 })
+
+      if (this.resources.length === 0) {
+        Column({ space: 14 }) {
+          Text('🌐').fontSize(52)
+          Text(this.vpnOn ? '等待服务列表下发…' : '暂无可访问资源')
+            .fontSize(15)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(COL_TEXT2)
+          Text('启动 System VPN 后，这里会显示\n当前身份可访问的全部 ziti 服务')
+            .fontSize(12)
+            .fontColor(COL_TEXT3)
+            .textAlign(TextAlign.Center)
+            .lineHeight(20)
+          if (!this.vpnOn) {
+            Button('启动 System VPN')
+              .height(42)
+              .fontSize(14)
+              .fontColor(Color.White)
+              .backgroundColor(COL_TEAL)
+              .borderRadius(12)
+              .onClick(() => { this.doVpnStart(); })
+          }
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+        .padding({ bottom: 80 })
+      } else {
+        Scroll() {
+          Column({ space: 10 }) {
+            ForEach(this.resources, (r: ResTarget) => {
+              Column({ space: 8 }) {
+                Row({ space: 8 }) {
+                  Text('▣')
+                    .fontSize(13)
+                    .fontColor(COL_TEAL)
+                  Text(r.name)
+                    .fontSize(14)
+                    .fontWeight(FontWeight.Medium)
+                    .fontColor(COL_TEXT1)
+                    .layoutWeight(1)
+                    .maxLines(1)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
+                }
+                .width('100%')
+
+                ForEach(r.targets, (t: string) => {
+                  Row({ space: 8 }) {
+                    Text('➜').fontSize(11).fontColor(COL_TEAL)
+                    Text(t)
+                      .fontSize(13)
+                      .fontColor(COL_TEAL)
+                      .layoutWeight(1)
+                      .maxLines(1)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+                      .onClick(() => { this.openResource(t); })
+                    Text('打开')
+                      .fontSize(11)
+                      .fontColor(COL_BLUE)
+                      .padding({ left: 12, right: 12, top: 4, bottom: 4 })
+                      .backgroundColor(COL_DIM_BLUE)
+                      .borderRadius(9)
+                      .onClick(() => { this.openResource(t); })
+                  }
+                  .width('100%')
+                }, (t: string) => t)
+              }
+              .width('100%')
+              .padding(14)
+              .backgroundColor(COL_CARD)
+              .borderRadius(14)
+              .border({ width: 1, color: COL_BORDER })
+            }, (r: ResTarget) => r.name)
+          }
+          .width('100%')
+          .padding({ left: 16, right: 16, bottom: 32 })
+        }
+        .scrollBar(BarState.Auto)
+        .edgeEffect(EdgeEffect.Spring)
+        .layoutWeight(1)
+        .width('100%')
+        .align(Alignment.TopStart)
+      }
+    }
+    .width('100%')
+    .height('100%')
+  }
+
+  @Builder
+  PageTools() {
+    Scroll() {
+      Column({ space: 14 }) {
+        this.CardTunnel()
+        this.CardDial()
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 16, bottom: 32 })
+    }
+    .scrollBar(BarState.Off)
+    .edgeEffect(EdgeEffect.Spring)
+    .height('100%')
+    .width('100%')
+    .align(Alignment.TopStart)
+  }
+
+  @Builder
+  PageLog() {
+    Column() {
+      Row({ space: 8 }) {
+        Text('📜 运行日志')
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(COL_TEXT1)
+        Blank()
+        Text(`${this.logLines.length} 条`)
+          .fontSize(11)
+          .fontColor(COL_TEXT3)
+        Text('清空')
+          .fontSize(12)
+          .fontColor(COL_TEXT2)
+          .padding({ left: 12, right: 12, top: 5, bottom: 5 })
+          .backgroundColor('#1A2230')
+          .borderRadius(9)
+          .onClick(() => { this.logLines = []; })
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
+      .padding({ left: 16, right: 16, top: 16, bottom: 12 })
+
+      Scroll(this.logScroll) {
+        Column() {
+          if (this.logLines.length === 0) {
+            Text('暂无日志')
+              .fontSize(12)
+              .fontColor(COL_TEXT3)
+              .padding(12)
+          } else {
+            ForEach(this.logLines, (line: string, idx: number) => {
+              Text(line)
+                .fontSize(11)
+                .fontFamily('monospace')
+                .fontColor(this.logColor(line))
+                .width('100%')
+            }, (line: string, idx: number) => `${idx}`)
+          }
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+        .padding(12)
+      }
+      .scrollBar(BarState.Auto)
+      .edgeEffect(EdgeEffect.Spring)
+      .layoutWeight(1)
+      .width('100%')
+      .margin({ left: 16, right: 16, bottom: 12 })
+      .align(Alignment.TopStart)
+      .backgroundColor(COL_CARD_IN)
+      .borderRadius(14)
+      .border({ width: 1, color: COL_BORDER })
+    }
+    .width('100%')
+    .height('100%')
+  }
+
+  build(): void {
+    Column() {
+      // 顶部固定 Header
+      Column() {
+        this.HeaderBar()
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 12, bottom: 10 })
+
+      Divider()
+        .color(COL_BORDER)
+        .strokeWidth(1)
+        .width('100%')
+
+      // 主体分页
+      Tabs({ barPosition: BarPosition.End, controller: this.tabCtrl }) {
+        TabContent() {
+          this.PageHome()
+        }
+        .tabBar(this.TabItem('🏠', '首页', TAB_HOME))
+
+        TabContent() {
+          this.PageResources()
+        }
+        .tabBar(this.TabItem('🌐', '资源', TAB_RES))
+
+        TabContent() {
+          this.PageTools()
+        }
+        .tabBar(this.TabItem('🛠️', '工具', TAB_TOOLS))
+
+        TabContent() {
+          this.PageLog()
+        }
+        .tabBar(this.TabItem('📜', '日志', TAB_LOG))
+      }
+      .layoutWeight(1)
+      .barHeight(64)
+      .barBackgroundColor(COL_BAR_BG)
+      .onChange((index: number) => {
+        this.currentTab = index;
+        if (index === TAB_LOG) {
+          setTimeout(() => {
+            this.logScroll.scrollEdge(Edge.Bottom);
+          }, 50);
+        }
+      })
+    }
+    .width('100%')
+    .height('100%')
     .backgroundColor(COL_BG)
   }
 
@@ -616,6 +830,8 @@ struct Index {
       this.vpnOn = true;
       this.resources = [];
       this.log('VPN extension started');
+      // 跳转到资源页等待服务下发
+      this.tabCtrl.changeIndex(TAB_RES);
     } catch (e) {
       const err = e as BusinessError;
       this.log(`vpn start failed: ${err.message} (${err.code})`);

@@ -33,6 +33,7 @@ harmony/build-sign/
 *.jpeg
 *.jpg
 *.png
+.DS_Store
 docs/
 hub/
 harmony/layout*.json

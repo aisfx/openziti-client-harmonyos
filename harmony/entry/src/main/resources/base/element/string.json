@@ -1,7 +1,7 @@
 {
   "string": [
-    { "name": "module_desc", "value": "hm-agent 主模块" },
-    { "name": "app_title", "value": "hm-agent" },
+    { "name": "module_desc", "value": "openziti 主模块" },
+    { "name": "app_title", "value": "openziti" },
     { "name": "input_hint", "value": "输入消息，发送给智能体…" },
     { "name": "offline", "value": "离线" },
     { "name": "connecting", "value": "连接中…" },
