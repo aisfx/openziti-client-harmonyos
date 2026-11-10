@@ -1,36 +1,42 @@
-# hm-agent HarmonyOS App (harmony/)
+# openziti — HarmonyOS 客户端（harmony/）
 
-DevEco Studio 工程入口。手机直连内网 hub（`D:\workspace\hm-agent\hub`）。
+DevEco Studio 工程入口。基于 OpenZiti 的鸿蒙客户端，仅连接 ziti 网络，无其他功能。
 
 ## 打开方式
 
-1. DevEco Studio → Open → `D:\workspace\hm-agent\harmony`
-2. 等待 Sync（hvigor 会自动装 @ohos/hvigor-ohos-plugin）
-3. 接真机/模拟器（HarmonyOS 5.0.5+），Run 'entry'
+1. DevEco Studio → Open → 本目录（`harmony/`）
+2. 等待 Sync（hvigor 自动装 @ohos/hvigor-ohos-plugin）
+3. 连接真机（HarmonyOS 5.0.5+），Run 'entry'
+
+## 命令行构建（macOS）
+
+```bash
+./build-mac.sh install
+```
+
+首次使用需在 DevEco 中完成一次自动签名（File → Project Structure → Signing Configs）。
 
 ## 配置
 
 首次启动出现设置面板，填：
-- **服务器**: hub 所在机器的局域网地址，如 `ws://192.168.1.100:8787/ws`
-- **token**: agents.yaml 里的 `server.token`（默认 change-me）
+- **Identity**: ziti 身份文件（identity.json）内容或路径
+- TUN 参数一般用默认值（`100.64.0.1/10`，DNS `100.64.0.2`）
 
-配置存在 preferences（hm_agent_store），下次自动重连。
+配置存 preferences，下次自动加载。
 
 ## 代码结构
 
 ```
 entry/src/main/ets/
 ├── entryability/
-│   ├── EntryAbility.ets      # UIAbility，加载 pages/Index
+│   ├── EntryAbility.ets            # UIAbility，加载 pages/Index
 │   └── EntryAbilityStage.ets
 ├── model/
-│   └── HubClient.ets          # 传输层抽象（WebSocket 实现；未来 Ziti 在此替换）
-└── pages/
-    └── Index.ets              # 侧边栏 + 终端风聊天 UI
+│   └── HubClient.ets               # 传输层抽象（预留）
+├── pages/
+│   └── Index.ets                   # VPN 开关 + 服务列表 UI
+└── vpnextension/
+    └── ZitiVpnExtensionAbility.ets # VpnExtensionAbility + TUN + libziti 拦截
 ```
 
-## Ziti 替换点
-
-`HubClient` 是唯一的传输依赖。未来接入 Ziti app-embedded 模式时：
-- 新增 `ZitiHubClient` 实现（NAPI 调 libziti，本地回环暴露 ws 代理）
-- `Index.ets` 里 `new HubClient()` 换成新实现即可，UI 零改动
+`libziti_ohos.so`（NAPI 绑定）位于 `entry/oh_modules/`，由 libziti 交叉编译 OpenHarmony 产出。
