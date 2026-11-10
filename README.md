@@ -1,53 +1,55 @@
 # openziti-client-harmonyos
 
-基于 [OpenZiti](https://github.com/openziti/ziti) 开发的鸿蒙（HarmonyOS NEXT）客户端。
-仅此一个功能：连接 OpenZiti 零信任网络，没有其他功能。
+English | [简体中文](README.zh-CN.md)
 
-## 它做什么
+A [OpenZiti](https://github.com/openziti/ziti) client for HarmonyOS NEXT.
+One single purpose: connect to your OpenZiti zero-trust network. Nothing else.
 
-- 加载 Ziti **身份文件**（identity.json），接入你的 OpenZiti 网络
-- 以 **System VPN**（TUN）模式运行：接管 `100.64.0.0/10`，DNS `100.64.0.2`
-- 展示当前身份可访问的 **ziti 服务列表**（动态增删）
-- VPN 开启后，系统浏览器等任意 App 即可直接访问 ziti 服务（tunneler 拦截模式）
+## What It Does
 
-> 纯客户端定位：不做服务端、不做网关、不做聊天/智能体，任何其他功能都不在本项目范围内。
+- Loads a Ziti **identity file** (identity.json) and joins your OpenZiti network
+- Runs in **System VPN** (TUN) mode: takes over `100.64.0.0/10`, DNS `100.64.0.2`
+- Shows the **list of ziti services** your identity can access (dynamically added/removed)
+- With the VPN on, any app on the device — including the browser — can reach ziti services directly (tunneler interception)
 
-## 目录结构
+> Pure client scope: no server, no gateway, no chat/agent features. Nothing beyond the OpenZiti client itself.
+
+## Project Layout
 
 ```
 openziti-client-harmonyos/
-└── harmony/                         # DevEco Studio 工程
+└── harmony/                         # DevEco Studio project
     ├── AppScope/
-    ├── build-mac.sh                 # macOS 一键构建/签名/安装
+    ├── build-mac.sh                 # one-shot build / sign / install (macOS)
     └── entry/src/main/ets/
         ├── entryability/
-        │   ├── EntryAbility.ets           # UIAbility，加载主页面
+        │   ├── EntryAbility.ets           # UIAbility, loads the main page
         │   └── EntryAbilityStage.ets
         ├── model/
-        │   └── HubClient.ets              # 传输层抽象（预留）
+        │   └── HubClient.ets              # transport abstraction (reserved)
         ├── pages/
-        │   └── Index.ets                  # 主界面：VPN 开关 + 服务列表
+        │   └── Index.ets                  # main UI: VPN switch + service list
         └── vpnextension/
-            └── ZitiVpnExtensionAbility.ets  # VpnExtensionAbility + TUN + ziti 拦截
-    └── entry/oh_modules/libziti_ohos.so     # libziti NAPI 绑定（交叉编译产物）
+            └── ZitiVpnExtensionAbility.ets  # VpnExtensionAbility + TUN + ziti interception
+    └── entry/oh_modules/libziti_ohos.so     # libziti NAPI binding (cross-compiled)
 ```
 
-## 构建与安装
+## Build & Install
 
-### macOS 命令行（推荐）
+### Command line on macOS (recommended)
 
-前置：已安装 [DevEco Studio](https://developer.huawei.com/consumer/sc/deveco-studio/)，
-并在 DevEco 里完成一次自动签名（File → Project Structure → Signing Configs →
-Automatically generate signature，需登录实名开发者账号）。
+Prerequisites: [DevEco Studio](https://developer.huawei.com/consumer/sc/deveco-studio/) installed,
+and automatic signing done once inside DevEco (File → Project Structure → Signing Configs →
+Automatically generate signature; requires a signed-in, real-name verified developer account).
 
 ```bash
 cd harmony
-./build-mac.sh install    # 编译 + 签名 + hdc 安装到平板 + 启动
-./build-mac.sh            # 仅编译签名
-./build-mac.sh clean install  # 全量重建
+./build-mac.sh install    # build + sign + hdc install to tablet + launch
+./build-mac.sh            # build & sign only
+./build-mac.sh clean install  # clean rebuild
 ```
 
-默认目标设备 `192.168.18.32:41285`（hdc 无线），可用环境变量覆盖：
+Default target device is `192.168.18.32:41285` (hdc over Wi-Fi). Override with:
 
 ```bash
 PAD_TARGET=192.168.x.x:port ./build-mac.sh install
@@ -55,14 +57,14 @@ PAD_TARGET=192.168.x.x:port ./build-mac.sh install
 
 ### DevEco Studio
 
-打开 `harmony/` 目录，Sync 后连接设备 Run 'entry' 即可。
+Open the `harmony/` directory, wait for Sync, then Run 'entry' on a connected device.
 
-## 实测设备
+## Tested On
 
-- 华为 MatePad Mini 悦读版（MLR-AL00），HarmonyOS 7.0.0.111
-- 连接方式：hdc 无线调试（`hdc tconn <ip>:<port>`）
+- HUAWEI MatePad Mini (MLR-AL00), HarmonyOS 7.0.0.111
+- Connected via hdc wireless debugging (`hdc tconn <ip>:<port>`)
 
-## 安全说明
+## Security Notes
 
-- 身份文件（identity.json）即凭证，泄露等于交出网络访问权，请妥善保管
-- 调试签名仅用于开发调试，正式分发需上架或企业签名
+- The identity file (identity.json) **is** the credential — leaking it hands over your network access. Keep it safe.
+- The auto-generated signing config is for development/debug only; official distribution requires app-store release or enterprise signing.
