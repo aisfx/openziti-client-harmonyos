@@ -1,0 +1,7 @@
+{
+  "modelVersion": "5.0.5",
+  "name": "hm-agent",
+  "version": "0.1.0",
+  "description": "hm-agent HarmonyOS client",
+  "dependencies": {}
+}

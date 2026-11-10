@@ -1,0 +1,12 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "hm-agent 主模块" },
+    { "name": "app_title", "value": "hm-agent" },
+    { "name": "input_hint", "value": "输入消息，发送给智能体…" },
+    { "name": "offline", "value": "离线" },
+    { "name": "connecting", "value": "连接中…" },
+    { "name": "online", "value": "在线" },
+    { "name": "btn_send", "value": "发送" },
+    { "name": "btn_stop", "value": "停止" }
+  ]
+}

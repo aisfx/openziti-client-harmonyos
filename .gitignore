@@ -1,0 +1,38 @@
+# build & toolchain
+harmony/.hvigor/
+harmony/.idea/
+harmony/.clangd/
+harmony/.clang-format
+harmony/.appanalyzer/
+harmony/build/
+harmony/entry/build/
+harmony/oh_modules/
+harmony/entry/oh_modules/
+harmony/local.properties
+*.hap
+*.hsp
+*.har
+
+# native sdk sources & prebuilt (external, too large)
+harmony/entry/src/main/cpp/third_party/
+
+# logs & temp
+*.log
+*.txt
+!harmony/README.md
+
+# secrets & debug artifacts
+harmony/build-sign/
+*.jwt
+*.p12
+*.cer
+*.pem
+*.csr
+
+# screenshots & misc
+*.jpeg
+*.jpg
+*.png
+docs/
+hub/
+harmony/layout*.json
