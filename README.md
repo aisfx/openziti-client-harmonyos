@@ -14,6 +14,14 @@ One single purpose: connect to your OpenZiti zero-trust network. Nothing else.
 
 > Pure client scope: no server, no gateway, no chat/agent features. Nothing beyond the OpenZiti client itself.
 
+## Screenshots
+
+| Home (VPN + logs) | Services (redacted) | App Tunnel / Dial Test |
+|---|---|---|
+| ![home](screenshots/01-home-logs.jpeg) | ![services](screenshots/02-services.jpeg) | ![discover](screenshots/03-discover.jpeg) |
+
+> Internal host names and ports in the services screenshot are redacted.
+
 ## Project Layout
 
 ```
